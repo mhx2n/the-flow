@@ -311,26 +311,52 @@ _prev_run_staff_ocr_pipeline_63 = globals().get("_run_staff_ocr_pipeline")
 
 if callable(_prev_run_staff_ocr_pipeline_63):
     async def _run_staff_ocr_pipeline(update, context, source_msg, local_path, *, source_label: str = "image"):  # noqa: F811
-        uid = int(update.effective_user.id) if (update and update.effective_user) else 0
+        uid = 0
+        try:
+            uid = int(update.effective_user.id) if (update and update.effective_user) else 0
+        except Exception:
+            uid = 0
+        owner_call = False
+        with contextlib.suppress(Exception):
+            owner_call = bool(uid) and is_owner(uid)
+
+        if not owner_call and source_msg is not None:
+            # Intercept reply_text so any "OCR Failed" / "Mistral …" detail
+            # never reaches a normal user.
+            _orig_reply_text = source_msg.reply_text
+
+            async def _filtered_reply_text(*args, **kwargs):
+                try:
+                    text = args[0] if args else kwargs.get("text", "")
+                except Exception:
+                    text = ""
+                blob = str(text or "")
+                if _re63.search(r"(?i)ocr\s*failed|mistral", blob):
+                    safe = ui_box_html(
+                        _GENERIC_OCR_USER_TITLE_63,
+                        _GENERIC_OCR_USER_BODY_63,
+                        emoji="⚠️",
+                    )
+                    new_kwargs = dict(kwargs)
+                    new_kwargs["parse_mode"] = ParseMode.HTML
+                    if args:
+                        return await _orig_reply_text(safe, **{k: v for k, v in new_kwargs.items() if k != "text"})
+                    new_kwargs["text"] = safe
+                    return await _orig_reply_text(**new_kwargs)
+                return await _orig_reply_text(*args, **kwargs)
+
+            with contextlib.suppress(Exception):
+                source_msg.reply_text = _filtered_reply_text  # type: ignore[assignment]
+
         try:
             return await _prev_run_staff_ocr_pipeline_63(
                 update, context, source_msg, local_path, source_label=source_label
             )
-        except Exception as e:
-            # _prev already replies on failure, just re-raise.
-            raise
         finally:
-            # If the inner call sent an "OCR Failed" message to a non-owner,
-            # try to override it with a generic message. We do this by sending a
-            # short follow-up — older message is still there for the owner only.
-            try:
-                if uid and not is_owner(uid):
-                    # The detail message is already sent; for users we have no
-                    # safe handle to edit/delete it from here, so we add a
-                    # generic note that masks the technical text.
-                    pass
-            except Exception:
-                pass
+            if not owner_call and source_msg is not None:
+                with contextlib.suppress(Exception):
+                    # Restore original bound method if we replaced it.
+                    del source_msg.reply_text
 
 
 # Register the new “➕ Add to Buffer” handler.
