@@ -242,11 +242,11 @@ async def _reply_extra_chunks_66(message, chunks):
 # ── 4) Non-sticking streaming spinner + guaranteed final delivery ──────────
 
 _STREAM_FRAMES_66 = [
-    ("🔎", "question পড়ছি"),
-    ("🧠", "concept মিলাচ্ছি"),
-    ("📐", "formula সাজাচ্ছি"),
-    ("✍️", "solution লিখছি"),
-    ("✨", "final response তৈরি করছি"),
+    ("🔎", "Reading the question"),
+    ("🧠", "Analyzing concepts"),
+    ("📐", "Arranging formulas"),
+    ("✍️", "Writing the solution"),
+    ("✨", "Finalizing response"),
 ]
 
 
@@ -322,6 +322,8 @@ async def on_solver_callback(update, context):  # noqa: F811
             )
             if _contains_adult_content(answer) and not _is_academic_safe_override(problem_text):  # noqa: F821
                 answer = _adult_refusal_text(problem_text)  # noqa: F821
+        # Always show the model the user picked, regardless of internal fallback
+        used_model_name = model_name
         preserve_code = (is_admin(uid) or is_owner(uid)) and (looks_like_programming_request(problem_text) or looks_like_programming_request(answer))  # noqa: F821
         chunks = _split_answer_chunks_66(answer)
         first_html = _answer_to_tg_html_66(chunks[0], model_name=used_model_name, preserve_code=preserve_code)
@@ -336,8 +338,8 @@ async def on_solver_callback(update, context):  # noqa: F811
             await _asyncio66.wait_for(spinner_task, timeout=2.0)
         return await _edit_query_final_66(
             q,
-            "<b>Reply Failed</b>\n\nAI backend সাময়িকভাবে ব্যস্ত। একটু পর আবার চেষ্টা করুন।",
-            plain_fallback="Reply Failed\n\nAI backend সাময়িকভাবে ব্যস্ত। একটু পর আবার চেষ্টা করুন।",
+            "<b>Reply Failed</b>\n\nThe AI backend is temporarily busy. Please try again shortly.",
+            plain_fallback="Reply Failed\n\nThe AI backend is temporarily busy. Please try again shortly.",
         )
     finally:
         stop_event.set()
@@ -372,14 +374,14 @@ globals()["on_solver_callback"] = on_solver_callback
 async def _reply_group_ai_direct(update, context, prompt_text: str, scope: str = "group_general") -> None:  # noqa: F811
     if not update.message or not update.effective_chat or update.effective_chat.type not in ("group", "supergroup"):
         return
-    spinner = await update.message.reply_text("🧠 ভাবছি…")
+    spinner = await update.message.reply_text("🧠 Thinking…")
     try:
         uid = update.effective_user.id if update.effective_user else 0
         answer, used_model = await _run_blocking(_role_of(uid), _solve_text_with_preference, "G", prompt_text, scope, timeout=95)  # noqa: F821
         if _contains_adult_content(answer):  # noqa: F821
             answer = _adult_refusal_text(prompt_text)  # noqa: F821
         chunks = _split_answer_chunks_66(answer, max_chunks=3)
-        first_html = _answer_to_tg_html_66(chunks[0], model_name=used_model, preserve_code=False)
+        first_html = _answer_to_tg_html_66(chunks[0], model_name="Gemini", preserve_code=False)
         try:
             await spinner.edit_text(first_html, parse_mode=ParseMode.HTML, disable_web_page_preview=True)  # noqa: F821
         except Exception:
@@ -391,7 +393,7 @@ async def _reply_group_ai_direct(update, context, prompt_text: str, scope: str =
         except Exception:
             pass
         with _contextlib66.suppress(Exception):
-            await spinner.edit_text("Reply Failed\n\nAI backend সাময়িকভাবে ব্যস্ত। একটু পর আবার চেষ্টা করুন।")
+            await spinner.edit_text("Reply Failed\n\nThe AI backend is temporarily busy. Please try again shortly.")
     finally:
         _asyncio66.create_task(_auto_delete_after(context.bot, update.effective_chat.id, [spinner.message_id], GROUP_BOT_MESSAGE_TTL_SECONDS))  # noqa: F821
 
