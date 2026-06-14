@@ -322,6 +322,8 @@ async def on_solver_callback(update, context):  # noqa: F811
             )
             if _contains_adult_content(answer) and not _is_academic_safe_override(problem_text):  # noqa: F821
                 answer = _adult_refusal_text(problem_text)  # noqa: F821
+        # Always show the model the user picked, regardless of internal fallback
+        used_model_name = model_name
         preserve_code = (is_admin(uid) or is_owner(uid)) and (looks_like_programming_request(problem_text) or looks_like_programming_request(answer))  # noqa: F821
         chunks = _split_answer_chunks_66(answer)
         first_html = _answer_to_tg_html_66(chunks[0], model_name=used_model_name, preserve_code=preserve_code)
