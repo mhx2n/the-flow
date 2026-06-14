@@ -374,7 +374,7 @@ globals()["on_solver_callback"] = on_solver_callback
 async def _reply_group_ai_direct(update, context, prompt_text: str, scope: str = "group_general") -> None:  # noqa: F811
     if not update.message or not update.effective_chat or update.effective_chat.type not in ("group", "supergroup"):
         return
-    spinner = await update.message.reply_text("🧠 ভাবছি…")
+    spinner = await update.message.reply_text("🧠 Thinking…")
     try:
         uid = update.effective_user.id if update.effective_user else 0
         answer, used_model = await _run_blocking(_role_of(uid), _solve_text_with_preference, "G", prompt_text, scope, timeout=95)  # noqa: F821
