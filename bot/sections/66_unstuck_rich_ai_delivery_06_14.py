@@ -242,11 +242,11 @@ async def _reply_extra_chunks_66(message, chunks):
 # ── 4) Non-sticking streaming spinner + guaranteed final delivery ──────────
 
 _STREAM_FRAMES_66 = [
-    ("🔎", "question পড়ছি"),
-    ("🧠", "concept মিলাচ্ছি"),
-    ("📐", "formula সাজাচ্ছি"),
-    ("✍️", "solution লিখছি"),
-    ("✨", "final response তৈরি করছি"),
+    ("🔎", "Reading the question"),
+    ("🧠", "Analyzing concepts"),
+    ("📐", "Arranging formulas"),
+    ("✍️", "Writing the solution"),
+    ("✨", "Finalizing response"),
 ]
 
 
