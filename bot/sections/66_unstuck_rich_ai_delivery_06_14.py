@@ -381,7 +381,7 @@ async def _reply_group_ai_direct(update, context, prompt_text: str, scope: str =
         if _contains_adult_content(answer):  # noqa: F821
             answer = _adult_refusal_text(prompt_text)  # noqa: F821
         chunks = _split_answer_chunks_66(answer, max_chunks=3)
-        first_html = _answer_to_tg_html_66(chunks[0], model_name=used_model, preserve_code=False)
+        first_html = _answer_to_tg_html_66(chunks[0], model_name="Gemini", preserve_code=False)
         try:
             await spinner.edit_text(first_html, parse_mode=ParseMode.HTML, disable_web_page_preview=True)  # noqa: F821
         except Exception:
