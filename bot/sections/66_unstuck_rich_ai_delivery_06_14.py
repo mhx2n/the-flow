@@ -393,7 +393,7 @@ async def _reply_group_ai_direct(update, context, prompt_text: str, scope: str =
         except Exception:
             pass
         with _contextlib66.suppress(Exception):
-            await spinner.edit_text("Reply Failed\n\nAI backend সাময়িকভাবে ব্যস্ত। একটু পর আবার চেষ্টা করুন।")
+            await spinner.edit_text("Reply Failed\n\nThe AI backend is temporarily busy. Please try again shortly.")
     finally:
         _asyncio66.create_task(_auto_delete_after(context.bot, update.effective_chat.id, [spinner.message_id], GROUP_BOT_MESSAGE_TTL_SECONDS))  # noqa: F821
 
