@@ -338,8 +338,8 @@ async def on_solver_callback(update, context):  # noqa: F811
             await _asyncio66.wait_for(spinner_task, timeout=2.0)
         return await _edit_query_final_66(
             q,
-            "<b>Reply Failed</b>\n\nAI backend সাময়িকভাবে ব্যস্ত। একটু পর আবার চেষ্টা করুন।",
-            plain_fallback="Reply Failed\n\nAI backend সাময়িকভাবে ব্যস্ত। একটু পর আবার চেষ্টা করুন।",
+            "<b>Reply Failed</b>\n\nThe AI backend is temporarily busy. Please try again shortly.",
+            plain_fallback="Reply Failed\n\nThe AI backend is temporarily busy. Please try again shortly.",
         )
     finally:
         stop_event.set()
