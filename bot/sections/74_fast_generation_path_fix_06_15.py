@@ -52,7 +52,9 @@ def _adv_call_openai_compat(prov, prompt, *, force_json, timeout):  # noqa: F811
         raise RuntimeError("api_key missing")
     model = str((prov or {}).get("model") or _provider_defaults_74(kind).get("model") or "llama-3.1-8b-instant")
     url = base if base.endswith("/chat/completions") else f"{base}/chat/completions"
-    per_timeout = max(4, min(int(timeout or 8), 8))
+    # 15–18s is the practical sweet spot: enough for Mistral/Cohere/NVIDIA JSON
+    # completions, still far below the old multi-minute stall.
+    per_timeout = max(6, min(int(timeout or 18), 18))
 
     def _post(use_json_mode: bool):
         messages = [{"role": "user", "content": prompt}]
@@ -87,7 +89,7 @@ globals()["_adv_call_openai_compat"] = _adv_call_openai_compat
 
 def _adv_call_text(prompt, *, force_json=False, timeout=18):  # noqa: F811
     """Fast cascade: fresh rows, user providers first, short cooldown for failures."""
-    per = max(4, min(int(timeout or 8), 8))
+    per = max(6, min(int(timeout or 18), 18))
     now = _time74.time()
     rows = []
     with _cx74.suppress(Exception):
@@ -253,7 +255,7 @@ def _generate_batch_fast_74(source_text, need, *, easy=0, medium=0, hard=0, avoi
     prompt = _make_fast_new_mcq_prompt_74(source_text, need, easy=easy, medium=medium, hard=hard, avoid_text=avoid_text)
     raw = ""
     try:
-        raw, _used = _adv_call_text(prompt, force_json=True, timeout=8)
+        raw, _used = _adv_call_text(prompt, force_json=True, timeout=18)
     except Exception as e:
         db_log("WARN", "fast_gen_adv_failed_74", {"error": str(e)[:180]})  # type: ignore[name-defined]
         return []
