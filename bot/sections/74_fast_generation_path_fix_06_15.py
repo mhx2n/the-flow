@@ -324,6 +324,61 @@ def _generate_mcqs_from_content(content_text, *, easy, medium, hard):  # noqa: F
 globals()["_generate_mcqs_from_content"] = _generate_mcqs_from_content
 
 
+async def _generate_to_buffer_59(update, context, ocr_ctx, uid, count, mode="std"):  # noqa: F811
+    """Direct .gen buffer writer; do not let old per-source seen cache ghost new attempts."""
+    count = max(1, min(500, int(count or 20)))
+    globals()["_active_gen_mode_57"] = mode or "std"
+    try:
+        items = await _run_blocking(  # type: ignore[name-defined]
+            _role_of(uid), _generate_quizzes_from_ocr_sync,  # type: ignore[name-defined]
+            ocr_ctx, count, uid, timeout=max(35, min(160, count * 4)),
+        )
+    except Exception as e:
+        db_log("WARN", "direct_gen_failed_74", {"user_id": int(uid), "error": str(e)[:200]})  # type: ignore[name-defined]
+        items = []
+    finally:
+        globals()["_active_gen_mode_57"] = None
+
+    seen, added, dup = set(), 0, 0
+    with _cx74.suppress(Exception):
+        for _, it in (buffer_list(uid, limit=99999) or []):  # type: ignore[name-defined]
+            seen.add(_fp_question(it))  # type: ignore[name-defined]
+    for raw in items or []:
+        try:
+            q = str(raw.get("question") or raw.get("questions") or "").strip()
+            opts = raw.get("options") if isinstance(raw.get("options"), list) else _opts_59(raw)  # type: ignore[name-defined]
+            opts = [str(o or "").strip() for o in (opts or []) if str(o or "").strip()][:5]
+            ans = int(raw.get("answer", 1) or 1)
+            if not q or len(opts) < 2 or not (1 <= ans <= len(opts)):
+                continue
+            payload = {"questions": q, "answer": ans,
+                       "explanation": str(raw.get("explanation") or "")[:200],
+                       "type": 1, "section": 1, "source": f"gen_{mode}"}
+            for i in range(5):
+                payload[f"option{i+1}"] = opts[i] if i < len(opts) else ""
+            with _cx74.suppress(Exception):
+                payload = _enforce_option_parity(payload)  # type: ignore[name-defined]
+            fp = _fp_question(payload)  # type: ignore[name-defined]
+            if fp in seen:
+                dup += 1
+                continue
+            if buffer_count(uid) >= MAX_BUFFERED_QUESTIONS:  # type: ignore[name-defined]
+                break
+            if not explain_mode_on(uid):  # type: ignore[name-defined]
+                payload["explanation"] = ""
+            buffer_add(uid, payload)  # type: ignore[name-defined]
+            seen.add(fp)
+            added += 1
+        except Exception:
+            continue
+    with _cx74.suppress(Exception):
+        _gen_seen_for(context, uid, _source_hash_59(ocr_ctx, mode)).update(seen)  # type: ignore[name-defined]
+    return added, dup
+
+
+globals()["_generate_to_buffer_59"] = _generate_to_buffer_59
+
+
 with _cx74.suppress(Exception):
     logger.info("[PATCH-74] fast provider-first generation path active; source MCQs are avoid-list only.")  # type: ignore[name-defined]
 
